@@ -43,6 +43,8 @@ jcef.jar
 .idea/
 lib/
 
+chromium/
+
 # Logs
 *.log
 cef_debug.log

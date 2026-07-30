@@ -7,34 +7,40 @@
     <groupId>com.quantumbrowser</groupId>
     <artifactId>QuantumBrowser</artifactId>
     <version>1.0-SNAPSHOT</version>
-     <packaging>jar</packaging>
+    <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21.0.2</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- JavaFX -->
+        <dependency>
+            <groupId>com.techsenger.ceffx</groupId>
+            <artifactId>ceffx-core</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/ceffx-core-1.0.0-SNAPSHOT.jar</systemPath>
+        </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
+            <artifactId>javafx-web</artifactId>
             <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-swing</artifactId>
             <version>${javafx.version}</version>
+            <classifier>win</classifier>
         </dependency>
-
-        <!-- JCEF -->
         <dependency>
             <groupId>org.cef</groupId>
             <artifactId>jcef</artifactId>
@@ -42,13 +48,57 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/jcef.jar</systemPath>
         </dependency>
-
-        <!-- JSON para persistência -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
+        <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.12</version>
+    </dependency>
+    <!-- Implementação simples para cuspir os logs no terminal -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>2.0.12</version>
+    </dependency>
     </dependencies>
+
+   <build>
+    <plugins>
+        <plugin>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-maven-plugin</artifactId>
+            <version>0.0.8</version>
+            <configuration>
+                <mainClass>com.quantum.browser.BrowserApp</mainClass>
+                <options>
+                    <!-- 1. MAPEAMENTO DAS DLLS: Passado exatamente como o criador fez -->
+                    <option>-Djava.library.path=${project.basedir}/chromium</option>
+
+                    <!-- 2. LIBERAÇÃO DE ACESSO NATIVO: Necessário para o JDK 25 rodar DLLs -->
+                    <option>--enable-native-access=javafx.graphics</option>
+                    <option>--enable-native-access=ALL-UNNAMED</option>
+
+                    <!-- 3. CONFIGURAÇÕES DA GPU DIRECT3D -->
+                    <option>-Dprism.order=d3d</option>
+                    <option>-Dprism.verbose=true</option>
+
+                    <!-- 4. PERMISSÕES DE REFLEXÃO PARA O NOSSO PIPELINE DO RENDERER -->
+                    <option>--add-opens</option>
+                    <option>javafx.graphics/com.sun.prism.d3d=ALL-UNNAMED</option>
+                    <option>--add-opens</option>
+                    <option>javafx.graphics/com.sun.prism=ALL-UNNAMED</option>
+                    <option>--add-opens</option>
+                    <option>javafx.graphics/com.sun.javafx.graphics=ALL-UNNAMED</option>
+                    <option>--add-opens</option>
+                    <option>javafx.graphics/com.sun.glass.ui=ALL-UNNAMED</option>
+                </options>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
 
 </project>

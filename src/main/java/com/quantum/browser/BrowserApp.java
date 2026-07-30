@@ -1,6 +1,7 @@
 package com.quantum.browser;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -65,7 +66,7 @@ public class BrowserApp extends Application {
                     client.setRendererFactory(() -> new CefRendererD3D());
 
                     // 3. CRIAÇÃO DO BROWSER: 'true' no segundo parâmetro para amarrar o fix do ImageView
-                    browser = client.createBrowser("https://google.com", true, false);
+                    browser = client.createBrowser("https://youtube.com", true, false);
 
                     // 4. MONTAGEM DO LAYOUT NO JAVAFX
                     javafx.application.Platform.runLater(() -> {
@@ -79,8 +80,16 @@ public class BrowserApp extends Application {
                         primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> browserPane.setPrefWidth(newVal.doubleValue()));
                         primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> browserPane.setPrefHeight(newVal.doubleValue()));
 
-                        primaryStage.setTitle("QuantumBrowser 4K - Ultra Performance GPU");
+                        primaryStage.setTitle("QuantumBrowser");
                         primaryStage.setScene(scene);
+                        primaryStage.setOnCloseRequest(e -> {
+                            // Evita o fechamento padrão do JavaFX para dar tempo ao Chromium de limpar a memória
+                            e.consume();
+
+                            // Dispara o encerramento limpo na thread correta
+                            fecharAplicacaoSeguro(primaryStage);
+                        });
+
                         primaryStage.show();
                     });
                 } catch (Exception ex) {
@@ -93,14 +102,36 @@ public class BrowserApp extends Application {
         }
     }
 
-    @Override
-    public void stop() throws Exception {
-        // Despeja os subprocessos nativos do Chromium de forma limpa
-        CefApp.runLater(() -> {
+    private void fecharAplicacaoSeguro(Stage stage) {
+    // 1. Esconde a janela imediatamente para dar feedback visual ao usuário
+    if (stage != null) {
+        stage.hide();
+    }
+
+    // 2. Executa o descarte do CefApp de forma assíncrona dentro da Thread do CEF
+    CefApp.runLater(() -> {
+        try {
             if (cefAppInstance != null) {
                 cefAppInstance.dispose();
             }
-        });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            // 3. O golpe de misericórdia: Após desligar as DLLs, mata o processo no Windows
+            Platform.runLater(() -> {
+                Platform.exit();
+                System.exit(0); // Garante que o Maven e o processo sumam do gerenciador
+            });
+        }
+    });
+}
+
+    @Override
+    public void stop() throws Exception {
+        // Fallback caso o fechamento não passe pelo setOnCloseRequest
+        if (cefAppInstance != null) {
+            fecharAplicacaoSeguro(null);
+        }
         super.stop();
     }
 }

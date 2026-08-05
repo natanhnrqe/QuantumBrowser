@@ -1,5 +1,6 @@
 package com.quantum.browser;
 
+import com.quantum.browser.ui.BrowserWindow;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -60,38 +61,20 @@ public class BrowserApp extends Application {
             // 1. O CefApp já foi pré-inicializado no main, criamos o cliente na FX Thread
             CefApp.runLater(() -> {
                 try {
-                    client = cefAppInstance.createClient();
+                    BrowserWindow window = new BrowserWindow(primaryStage, cefAppInstance);
 
-                    // 2. ATIVAÇÃO DO MOTOR D3D CUSTOMIZADO E ULTRA-RÁPIDO QUE COMPILAMOS
-                    client.setRendererFactory(() -> new CefRendererD3D());
+                    Platform.runLater(() -> {
+                        Scene scene = new Scene(window, 1024, 768);
 
-                    // 3. CRIAÇÃO DO BROWSER: 'true' no segundo parâmetro para amarrar o fix do ImageView
-                    browser = client.createBrowser("https://youtube.com", true, false);
-
-                    // 4. MONTAGEM DO LAYOUT NO JAVAFX
-                    javafx.application.Platform.runLater(() -> {
-                        StackPane root = new StackPane();
-                        javafx.scene.layout.Pane browserPane = browser.getPane();
-                        root.getChildren().add(browserPane);
-
-                        Scene scene = new Scene(root, 1024, 768);
-
-                        // Mantém a proporção geométrica sincronizada no resize
-                        primaryStage.widthProperty().addListener((obs, oldVal, newVal) -> browserPane.setPrefWidth(newVal.doubleValue()));
-                        primaryStage.heightProperty().addListener((obs, oldVal, newVal) -> browserPane.setPrefHeight(newVal.doubleValue()));
-
-                        primaryStage.setTitle("QuantumBrowser");
+                        primaryStage.setTitle("Quantum");
                         primaryStage.setScene(scene);
                         primaryStage.setOnCloseRequest(e -> {
-                            // Evita o fechamento padrão do JavaFX para dar tempo ao Chromium de limpar a memória
                             e.consume();
-
-                            // Dispara o encerramento limpo na thread correta
                             fecharAplicacaoSeguro(primaryStage);
                         });
-
                         primaryStage.show();
                     });
+
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }

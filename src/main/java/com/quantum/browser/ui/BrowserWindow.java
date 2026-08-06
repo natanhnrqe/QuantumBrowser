@@ -10,6 +10,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import static com.quantum.browser.BrowserConfig.HOME_PAGE;
+
 public class BrowserWindow extends BorderPane {
 
     private final Stage stage;
@@ -27,13 +29,21 @@ public class BrowserWindow extends BorderPane {
     private void inicializate() {
         cefClient = cefApp.createClient();
         cefClient.setRendererFactory(()-> new CefRendererD3D());
-        cefBrowser = cefClient.createBrowser("https://google.com", true, false);
+        cefBrowser = cefClient.createBrowser(HOME_PAGE, true, false);
 
         browserPane = cefBrowser.getPane();
 
-        VBox topArea = new VBox();
-        setTop(topArea);
+        ToolBar toolBar = new ToolBar();
+        toolBar.setOnBack(() -> cefBrowser.goBack());
+        toolBar.setOnForward(() -> cefBrowser.goForward());
+        toolBar.setOnReload(() -> cefBrowser.reload());
+        toolBar.setOnHome(() -> cefBrowser.loadURL(HOME_PAGE));
+        toolBar.setOnNavigate( url -> cefBrowser.loadURL(url));
+        toolBar.setOnFavorite(() -> System.out.println("favorito: " + cefBrowser.getURL()));
 
+
+        VBox topArea = new VBox(toolBar);
+        setTop(topArea);
         setCenter(browserPane);
 
         stage.widthProperty().addListener((obs, oldVal, newVal) ->
